@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>医学图像分割</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { display: flex; gap: 20px; margin-top: 20px; }
+        img { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>医学细胞分割工具</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button id="predictBtn">开始分割</button>
+    
+    <div class="container" id="resultContainer" style="display: none;">
+        <div>
+            <h3>输入图像</h3>
+            <img id="inputImage" src="" alt="输入图像">
+        </div>
+        <div>
+            <h3>分割结果</h3>
+            <img id="predictedMask" src="" alt="分割掩码">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictBtn').addEventListener('click', function() {
+            const fileInput = document.getElementById('imageUpload');
+            if (!fileInput.files.length) {
+                alert('请先选择图像！');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            // 调用后端API
+            fetch('http://localhost:5000/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                // 显示结果容器
+                document.getElementById('resultContainer').style.display = 'flex';
+                // 展示输入图像
+                document.getElementById('inputImage').src = URL.createObjectURL(fileInput.files[0]);
+                // 展示分割掩码（Base64解码）
+                document.getElementById('predictedMask').src = `data:image/png;base64,${data.mask}`;
+            })
+            .catch(err => {
+                console.error(err);
+                alert('分割失败，请检查服务器或网络！');
+            });
+        });
+    </script>
+</body>
+</html>
